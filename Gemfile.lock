@@ -1,0 +1,22 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ansi (1.5.0)
+    ast (2.3.0)
+    oga (2.2)
+      ast
+      ruby-ll (~> 2.1)
+    redis (3.3.0)
+    ruby-ll (2.1.2)
+      ansi
+      ast
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  oga
+  redis
+
+BUNDLED WITH
+   1.15.4
