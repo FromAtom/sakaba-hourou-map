@@ -3,6 +3,9 @@ GEM
   specs:
     ansi (1.5.0)
     ast (2.3.0)
+    httparty (0.16.0)
+      multi_xml (>= 0.5.2)
+    multi_xml (0.6.0)
     oga (2.2)
       ast
       ruby-ll (~> 2.1)
@@ -15,6 +18,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  httparty
   oga
   redis
 
