@@ -1,6 +1,7 @@
 require 'redis'
 require 'oga'
 require 'httparty'
+require 'csv'
 
 BASE_URL = 'http://www.bs-tbs.co.jp/sakaba/'
 INDEX_PAGE_URL = 'http://www.bs-tbs.co.jp/sakaba/map/index.html'
@@ -22,7 +23,8 @@ def getPaths
 end
 
 def getInfomations(paths)
-  paths.each do |path|
+  shop_infos = []
+  paths.sample(10).each do |path|
     response = HTTParty.get(path)
     html = response.body
     next if html.empty?
@@ -52,17 +54,18 @@ def getInfomations(paths)
     address_match = info.match(/(住　所|住所)：(\S+)(電話)?/)
     address = '不明'
     if address_match.nil?
-      puts "[住所不明] #{path}"
+      puts "[住所不明] #{path}" unless closed
     else
-      address = match[2].gsub(/　/,'').strip.tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
+      address = address_match[2].gsub(/　/,'').strip.tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
     end
     shop_info[:address] = address
 
     # 電話番号
     tel_match = info.match(/(ＴＥＬ|電話|電　話|TEL)：(\d+.{1}\d+.{1}\d+)/)
     tel = '不明'
+
     if tel_match.nil?
-      puts "[TEL不明] #{path}"
+      puts "[TEL不明] #{path}" unless closed
     else
       tel = tel_match[2].tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
     end
@@ -71,20 +74,39 @@ def getInfomations(paths)
     # 説明文
     description = ''
     document.css('td.kihon2 > p').each do |desc|
-      description << desc.text.strip.tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
+      description << desc.text
     end
 
     if description.empty?
-      description << document.css('td.kihon2').first.text.strip.tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
+      description << document.css('td.kihon2').text.split(/.*(住所|住　所).*/).first
     end
+
     if description.empty?
       puts "[DESC空] #{path}"
     end
 
-    shop_info[:description] = description
+    shop_info[:description] = description.gsub(/(\r\n|\r|\n|\s)/, '').gsub('　',' ').tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z').strip
+    shop_info[:url] = path
+    shop_infos << shop_info
+
   end
+  return shop_infos
 end
 
 paths = getPaths()
 hoge = paths.first
-getInfomations(paths)
+infos = getInfomations(paths)
+
+class Array
+  def to_csv(csv_filename="hash.csv")
+    require 'csv'
+    CSV.open(csv_filename, "wb") do |csv|
+      csv << first.keys # adds the attributes name on the first line
+      self.each do |hash|
+        csv << hash.values
+      end
+    end
+  end
+end
+
+infos.to_csv()
