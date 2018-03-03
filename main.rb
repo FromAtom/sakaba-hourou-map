@@ -32,7 +32,6 @@ end
 def getInfomations(paths)
   shop_infos = []
   paths.each do |path|
-    p path
     response = HTTParty.get(path)
     html = response.body
     next if html.empty?
@@ -44,7 +43,10 @@ def getInfomations(paths)
     match = midashi.match(/^.+#(\d+).+「(.+)」/)
     next if match.nil?
     id = match[1]
-    next if IGNORE_IDS.include?(id.to_i)
+    if IGNORE_IDS.include?(id.to_i)
+      puts 'スキップしました'
+      next
+    end
 
     original_name = match[2].gsub(/　/,'').strip.tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z')
     closed = midashi.include?('閉店') || ko_midashi.include?('閉店')
@@ -56,10 +58,10 @@ def getInfomations(paths)
       'ID' => id,
       '店名' => name,
     }
-    info = document.css('span.kihon5').text
+    info = document.css("td span.kihon5").last.text
 
     # 住所
-    address_match = info.match(/(住　所|住所).*：(\S+)(電話)?/)
+    address_match = info.match(/(住　所|住所).*：\s*(\S+)(電話)?/)
     address = '不明'
     if address_match.nil?
       puts "[住所不明] #{path}" unless closed
@@ -82,8 +84,10 @@ def getInfomations(paths)
 
     # 説明文
     description = ''
-    document.css('td.kihon2 > p').each do |desc|
-      description << desc.text
+    document.css('td.kihon2').first.children.each do |a|
+      if a.kind_of?(Oga::XML::Text)
+        description << a.text
+      end
     end
 
     if description.empty?
@@ -97,14 +101,14 @@ def getInfomations(paths)
     shop_info['説明'] = description.gsub(/(\r\n|\r|\n|\s)/, '').gsub('　',' ').tr('０-９ａ-ｚＡ-Ｚ', '0-9a-zA-Z').strip
     shop_info['URL'] = path
     shop_infos << shop_info
-    sleep 3
+    sleep 2
   end
   return shop_infos
 end
 
 paths = getPaths()
-infos = getInfomations(paths)
-
+infos = getInfomations(['http://www.bs-tbs.co.jp/sakaba/shop/032.html'])
+p infos
 CSV.open('result.csv', "wb") do |csv|
   csv << infos.first.keys
   infos.each do |hash|
