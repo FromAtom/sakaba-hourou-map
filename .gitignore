@@ -52,3 +52,5 @@ build-iPhoneSimulator/
 .rvmrc
 
 .DS_Store
+
+*.csv
