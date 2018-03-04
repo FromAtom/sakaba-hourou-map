@@ -13,6 +13,9 @@ GEM
     ruby-ll (2.1.2)
       ansi
       ast
+    unf (0.1.4)
+      unf_ext
+    unf_ext (0.0.7.5)
 
 PLATFORMS
   ruby
@@ -21,6 +24,7 @@ DEPENDENCIES
   httparty
   oga
   redis
+  unf
 
 BUNDLED WITH
    1.15.4
